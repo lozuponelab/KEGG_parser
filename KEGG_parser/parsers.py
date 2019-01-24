@@ -1,45 +1,71 @@
 """Parsers"""
 
 
+def split_entry(current_dict, current_entry_name, current_entry_data):
+    current_dict[current_entry_name] = current_entry_data.split()[0]
+    return current_dict
+
+def split_name(current_dict, current_entry_name, current_entry_data):
+    current_dict[current_entry_name] = current_entry_data.split(', ')
+    return current_dict
+
+def return_self(current_dict, current_entry_name, current_entry_data):
+    current_dict[current_entry_name] = current_entry_data
+    return current_dict
+
+def split_and_append(current_dict, current_entry_name, current_entry_data):
+    split_current_entry_data = current_entry_data.split()
+    current_entry_pathway_id = split_current_entry_data[0]
+    current_entry_pathway_name = ' '.join(split_current_entry_data[1:])
+
+    if current_entry_name not in current_dict:
+        current_dict[current_entry_name] = list()
+
+    current_dict[current_entry_name].append((current_entry_pathway_id, current_entry_pathway_name))
+    return current_dict
+
+def add_class(current_dict, current_entry_name, current_entry_data):
+    if current_entry_name in current_dict:
+        current_dict[current_entry_name].append(current_entry_data)
+    else:
+        current_dict[current_entry_name] = [current_entry_data]
+    return current_dict
+
+def add_nested_dict(current_dict, current_entry_name, current_entry_data):
+    split_current_entry_data = current_entry_data.split(': ')
+    if current_entry_name not in current_dict:
+        current_dict[current_entry_name] = dict()
+    current_dict[current_entry_name][split_current_entry_data[0]] = split_current_entry_data[1].split()
+    return current_dict
+
+PARSE_KO_BY_FIELD = {
+    'ENTRY': split_entry, 'NAME': split_name, 'DEFINITION': return_self,
+    'PATHWAY': split_and_append, 'MODULE': split_and_append, 'DISEASE': split_and_append,
+    'CLASS': add_class, 'DBLINKS': add_nested_dict, 'GENES': add_nested_dict
+}
+
+NOT_CAPTURED_KO_FIELDS = ('REFERENCE', 'AUTHORS', 'TITLE', 'JOURNAL', 'SEQUENCE', 'BRITE')
+
 def parse_ko(ko_raw_record):
     ko_dict = dict()
     past_entry = None
     for line in ko_raw_record.strip().split('\n'):
         current_entry_name = line[:12].strip()
-        if current_entry_name == '':
+
+        if current_entry_name is '':
             current_entry_name = past_entry
+
         current_entry_data = line[12:].strip()
-        if current_entry_name != '':
-            if current_entry_name == 'ENTRY':
-                ko_dict[current_entry_name] = current_entry_data.split()[0]
-            elif current_entry_name == 'NAME':
-                ko_dict[current_entry_name] = current_entry_data.split(', ')
-            elif current_entry_name == 'DEFINITION':
-                ko_dict[current_entry_name] = current_entry_data
-            elif current_entry_name in ('PATHWAY', 'MODULE', 'DISEASE'):
-                split_current_entry_data = current_entry_data.split()
-                current_entry_pathway_id = split_current_entry_data[0]
-                current_entry_pathway_name = ' '.join(split_current_entry_data[1:])
-                if current_entry_name not in ko_dict:
-                    ko_dict[current_entry_name] = list()
-                ko_dict[current_entry_name].append((current_entry_pathway_id, current_entry_pathway_name))
-            elif current_entry_name == 'CLASS':
-                if 'CLASS' in ko_dict:
-                    ko_dict['CLASS'].append(current_entry_data)
-                else:
-                    ko_dict['CLASS'] = [current_entry_data]
-            elif current_entry_name == 'BRITE':
-                pass
-            elif current_entry_name == 'DBLINKS' or current_entry_name == 'GENES':
-                split_current_entry_data = current_entry_data.split(': ')
-                if current_entry_name not in ko_dict:
-                    ko_dict[current_entry_name] = dict()
-                ko_dict[current_entry_name][split_current_entry_data[0]] = split_current_entry_data[1].split()
-            elif current_entry_name in ('REFERENCE', 'AUTHORS', 'TITLE', 'JOURNAL', 'SEQUENCE'):
-                pass
-            else:
+
+        if current_entry_name is not '':
+            if current_entry_name in PARSE_KO_BY_FIELD:
+                ko_dict = PARSE_KO_BY_FIELD[current_entry_name](ko_dict, current_entry_name, current_entry_data)
+
+            elif current_entry_name not in NOT_CAPTURED_KO_FIELDS and current_entry_name not in PARSE_KO_BY_FIELD:
                 raise ValueError('What is %s in %s?' % (current_entry_name, ko_dict['ENTRY']))
+
         past_entry = current_entry_name
+
     return ko_dict
 
 
