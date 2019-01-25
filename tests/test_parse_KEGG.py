@@ -1,14 +1,10 @@
-import pytest
 import asyncio
 
+import pytest
+
+from KEGG_parser.downloader import get_from_kegg_api
 from KEGG_parser.parsers import parse_ko, parse_rn, parse_co, parse_pathway, parse_organism
-from KEGG_parser.downloader import get_from_kegg_flat_file, get_from_kegg_api, get_kegg_record_dict, \
-    get_kegg_link_from_api
-
-
-@pytest.fixture()
-def list_of_kos():
-    return ['K00001', 'K00002']
+from tests.test_fixtures import ko_raw_record, list_of_kos
 
 
 @pytest.fixture()
@@ -29,24 +25,6 @@ def test_get_from_kegg_kos(loop, list_of_kos):
 def test_get_from_kegg_rxns(loop, list_of_rxns):
     raw_entries = get_from_kegg_api(loop, list_of_rxns, parse_rn)
     assert len(raw_entries) == 2
-
-
-@pytest.fixture()
-def ko_raw_record():
-    return "ENTRY       K00001                      KO\n" \
-           "NAME        E0.0.0.0\n" \
-           "DEFINITION  a fake gene\n" \
-           "PATHWAY     ko00000 a fake pathway\n" \
-           "DISEASE     H00000 A bad one\n" \
-           "CLASS       Metabolism; Carbohydrate Metabolism; Glycolysis / Gluconeogenesis[PATH:ko00010]\n" \
-           "DBLINKS     RN: R00000\n" \
-           "            COG: COG0000\n" \
-           "GENES       HSA: hsa00000\n" \
-           "REFERENCE\n" \
-           "  AUTHORS   Fake G.\n" \
-           "  TITLE     Not Real\n" \
-           "  JOURNAL   Nurture (2001)\n" \
-           "  SEQUENCE  [fke:FK_0000]"
 
 
 def test_parse_ko(ko_raw_record):
@@ -197,27 +175,3 @@ def test_parse_organism(organism_raw_record):
     assert len(organism_record) == 9
     assert len(organism_record['ORTHOLOGY']) == 2
     assert organism_record['ORTHOLOGY'][0] == 'K00000'
-
-
-@pytest.fixture()
-def ko_flat_file(tmpdir_factory, ko_raw_record):
-    fn = tmpdir_factory.mktemp("data").join("ko")
-    fn.write('%s///\n' % '///\n'.join([ko_raw_record] * 3))
-    return str(fn)
-
-
-def test_get_from_kegg_flat_file(ko_flat_file):
-    organism_records = get_from_kegg_flat_file(ko_flat_file)
-    assert len(organism_records) == 3
-
-
-def test_get_kegg_record_dict(list_of_kos, ko_flat_file):
-    ko_dict_web = get_kegg_record_dict(list_of_kos, parse_ko)
-    assert len(ko_dict_web) == 2
-    ko_dict_local = get_kegg_record_dict(list_of_kos, parse_ko, ko_flat_file)
-    assert len(ko_dict_local) == 1
-
-
-def test_get_kegg_link_from_api():
-    link_dict = get_kegg_link_from_api('ko', 'hsa')
-    assert tuple(link_dict.keys())[0].startswith('K')
