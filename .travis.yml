@@ -1,0 +1,16 @@
+language: python
+python:
+- '3.5.5'
+- '3.6'
+cache: pip
+before_install:
+- pip install --upgrade pip
+- pip install 'pytest>=3.6' pytest-cov
+- pip install coveralls
+install:
+- pip install --no-cache-dir --editable .
+script:
+- export MPLBACKEND="agg"
+- py.test --cov AMON --cov-report term-missing
+after_success:
+- coveralls
