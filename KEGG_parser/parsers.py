@@ -42,6 +42,11 @@ def return_pathway_class(current_dict, current_entry_name, current_entry_data):
 
     return current_dict
 
+def return_module_class(current_dict, current_entry_name, current_entry_data):
+    current_dict[current_entry_name] = current_entry_data.split('; ')
+
+    return current_dict
+
 def split_equation(current_dict, current_entry_name, current_entry_data):
     equation_split = current_entry_data.split(' <=> ')
     if len(equation_split) != 2:
@@ -72,6 +77,14 @@ def split_and_append_organism(current_dict, current_entry_name, current_entry_da
     current_entry_pathway_id = split_current_entry_data[0]
     current_entry_pathway_name = ' '.join(split_current_entry_data[1:])
     current_dict[current_entry_name] = (current_entry_pathway_id, current_entry_pathway_name)
+
+    return current_dict
+
+def append_to_list(current_dict, current_entry_name, current_entry_data):
+    if current_entry_name not in current_dict:
+        current_dict[current_entry_name] = list()
+
+    current_dict[current_entry_name].append(current_entry_data)
 
     return current_dict
 
@@ -127,6 +140,13 @@ PARSE_ORGANISM_BY_FIELD = {
     'DISEASE': split_and_append
 }
 
+# TODO: parse module better
+PARSE_MODULE_BY_FIELD = {
+    'ENTRY': split_entry, 'NAME': return_self, 'DEFINITION': return_self, 'CLASS': return_module_class,
+    'PATHWAY': return_pathway_class, 'REACTION': append_to_list, 'COMPOUND': split_and_append, 'COMMENT': return_self,
+    'DBLINKS': add_nested_dict
+}
+
 NOT_CAPTURED_KO_FIELDS = ('REFERENCE', 'AUTHORS', 'TITLE', 'JOURNAL', 'SEQUENCE', 'BRITE')
 
 NOT_CAPTURED_RN_FIELDS = ('REFERENCE', 'AUTHORS', 'TITLE', 'JOURNAL')
@@ -138,6 +158,9 @@ NOT_CAPTURED_CO_FIELDS = ('BRITE', 'ATOM', 'BOND', 'BRACKET', 'ORIGINAL', 'REPEA
 NOT_CAPTURED_PATHWAY_FIELDS = ('GENE', 'ORGANISM', 'REFERENCE', 'AUTHORS', 'TITLE', 'JOURNAL')
 
 NOT_CAPTURED_ORGANISM_FIELDS = ('AASEQ', 'NTSEQ')
+
+NOT_CAPTURED_MODULE_FIELDS = ('ORTHOLOGY', 'REFERENCE', 'AUTHORS', 'TITLE', 'JOURNAL')
+
 
 def parse_ko(ko_raw_record):
     ko_dict = dict()
@@ -202,7 +225,6 @@ def parse_co(co_raw_record):
             elif current_entry_name not in NOT_CAPTURED_CO_FIELDS and current_entry_name not in PARSE_CO_BY_FIELD:
                 raise ValueError('What is {} in {}?'.format(current_entry_name, co_dict['ENTRY']))
 
-
         past_entry = current_entry_name
 
     return co_dict
@@ -260,6 +282,33 @@ def parse_organism(gene_raw_record):
                             current_entry_name not in PARSE_ORGANISM_BY_FIELD:
                 raise ValueError('What is {} in {}?'.format(current_entry_name, gene_dict['ENTRY']))
 
-
         past_entry = current_entry_name
     return gene_dict
+
+
+def parse_module(module_raw_record):
+    module_dict = dict()
+    past_entry = None
+
+    for line in module_raw_record.strip().split('\n'):
+        current_entry_name = line[:12].strip()
+
+        if current_entry_name == '':
+            current_entry_name = past_entry
+
+        current_entry_data = line[12:].strip()
+
+        if current_entry_name is not '':
+            if current_entry_name in PARSE_MODULE_BY_FIELD:
+                module_dict = PARSE_MODULE_BY_FIELD[current_entry_name](
+                    module_dict, current_entry_name, current_entry_data)
+
+            elif current_entry_name != current_entry_name.upper():
+                pass
+
+            elif current_entry_name not in NOT_CAPTURED_MODULE_FIELDS and \
+                            current_entry_name not in PARSE_MODULE_BY_FIELD:
+                raise ValueError('What is {} in {}?'.format(current_entry_name, module_dict['ENTRY']))
+
+        past_entry = current_entry_name
+    return module_dict

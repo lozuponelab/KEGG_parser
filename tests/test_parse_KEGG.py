@@ -3,7 +3,7 @@ import asyncio
 import pytest
 
 from KEGG_parser.downloader import get_from_kegg_api
-from KEGG_parser.parsers import parse_ko, parse_rn, parse_co, parse_pathway, parse_organism
+from KEGG_parser.parsers import parse_ko, parse_rn, parse_co, parse_pathway, parse_organism, parse_module
 from tests.test_fixtures import ko_raw_record, list_of_kos
 
 
@@ -175,3 +175,36 @@ def test_parse_organism(organism_raw_record):
     assert len(organism_record) == 9
     assert len(organism_record['ORTHOLOGY']) == 2
     assert organism_record['ORTHOLOGY'][0] == 'K00000'
+
+
+@pytest.fixture()
+def module_raw_record():
+    return "ENTRY       M00000                      Pathway   Module\n" \
+           "NAME        a fake pathway\n" \
+           "DEFINITION  (K00000+K00001,K09999+K99999) (K00002+K00003,K00005+K10006)\n" \
+           "ORTHOLOGY   K00000+K00001 fake enzyme\n" \
+           "            K09999+K99999 another fake enzyme\n" \
+           "            K00002+K00003 yet another fake enzyme\n" \
+           "            K00005+K10006 yet another fake enzyme\n" \
+           "CLASS       Pathway module; Energy metabolism; Nitrogen metabolism\n" \
+           "PATHWAY     map00000  Fake pathway\n" \
+           "            map01100  Metabolic pathways\n" \
+           "REACTION    R00001 C00000 -> C99999\n" \
+           "            R00002,R00003 C99999 -> C66666\n" \
+           "COMPOUND    C00000 A fake compound\n" \
+           "            C99999 Another fake compound\n" \
+           "            C66666 Yet another fake compound\n" \
+           "COMMENT     A description of this module\n" \
+           "DBLINKS     GO: 0019852\n" \
+           "REFERENCE   PMID:999999999\n" \
+           "  AUTHORS   Michal G.\n" \
+           "  TITLE     Biochemical Pathways\n" \
+           "  JOURNAL   Wiley (1999)\n"
+
+
+def test_parse_module(module_raw_record):
+    module_record = parse_module(module_raw_record)
+    assert len(module_record) == 9
+    assert module_record['ENTRY'] == 'M00000'
+    assert module_record['NAME'] == "a fake pathway"
+    assert module_record['DEFINITION'] == "(K00000+K00001,K09999+K99999) (K00002+K00003,K00005+K10006)"
