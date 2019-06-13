@@ -6,20 +6,24 @@ def split_entry(current_dict, current_entry_name, current_entry_data):
 
     return current_dict
 
+
 def split_name_by_comma(current_dict, current_entry_name, current_entry_data):
     current_dict[current_entry_name] = current_entry_data.split(', ')
 
     return current_dict
+
 
 def split_name(current_dict, current_entry_name, current_entry_data):
     current_dict[current_entry_name] = current_entry_data.split()
 
     return current_dict
 
+
 def return_self(current_dict, current_entry_name, current_entry_data):
     current_dict[current_entry_name] = current_entry_data
 
     return current_dict
+
 
 def return_co_name(current_dict, current_entry_name, current_entry_data):
     if current_entry_name not in current_dict:
@@ -29,6 +33,7 @@ def return_co_name(current_dict, current_entry_name, current_entry_data):
 
     return current_dict
 
+
 def return_co_reaction_enzyme(current_dict, current_entry_name, current_entry_data):
     if current_entry_name in current_dict:
         current_dict[current_entry_name] += current_entry_data.split()
@@ -37,15 +42,18 @@ def return_co_reaction_enzyme(current_dict, current_entry_name, current_entry_da
 
     return current_dict
 
+
 def return_pathway_class(current_dict, current_entry_name, current_entry_data):
     current_dict[current_entry_name] = [(i[:5], i[6:]) for i in current_entry_data.split('; ')]
 
     return current_dict
 
+
 def return_module_class(current_dict, current_entry_name, current_entry_data):
     current_dict[current_entry_name] = current_entry_data.split('; ')
 
     return current_dict
+
 
 def split_equation(current_dict, current_entry_name, current_entry_data):
     equation_split = current_entry_data.split(' <=> ')
@@ -60,6 +68,7 @@ def split_equation(current_dict, current_entry_name, current_entry_data):
 
     return current_dict
 
+
 def split_and_append(current_dict, current_entry_name, current_entry_data):
     split_current_entry_data = current_entry_data.split()
     current_entry_pathway_id = split_current_entry_data[0]
@@ -72,6 +81,7 @@ def split_and_append(current_dict, current_entry_name, current_entry_data):
 
     return current_dict
 
+
 def split_and_append_organism(current_dict, current_entry_name, current_entry_data):
     split_current_entry_data = current_entry_data.split()
     current_entry_pathway_id = split_current_entry_data[0]
@@ -79,6 +89,7 @@ def split_and_append_organism(current_dict, current_entry_name, current_entry_da
     current_dict[current_entry_name] = (current_entry_pathway_id, current_entry_pathway_name)
 
     return current_dict
+
 
 def append_to_list(current_dict, current_entry_name, current_entry_data):
     if current_entry_name not in current_dict:
@@ -88,6 +99,7 @@ def append_to_list(current_dict, current_entry_name, current_entry_data):
 
     return current_dict
 
+
 def add_class(current_dict, current_entry_name, current_entry_data):
     if current_entry_name in current_dict:
         current_dict[current_entry_name].append(current_entry_data)
@@ -96,6 +108,7 @@ def add_class(current_dict, current_entry_name, current_entry_data):
 
     return current_dict
 
+
 def add_nested_dict(current_dict, current_entry_name, current_entry_data):
     split_current_entry_data = current_entry_data.split(': ')
     if current_entry_name not in current_dict:
@@ -103,6 +116,7 @@ def add_nested_dict(current_dict, current_entry_name, current_entry_data):
     current_dict[current_entry_name][split_current_entry_data[0]] = split_current_entry_data[1].split()
 
     return current_dict
+
 
 PARSE_KO_BY_FIELD = {
     'ENTRY': split_entry, 'NAME': split_name_by_comma, 'DEFINITION': return_self,
@@ -251,7 +265,7 @@ def parse_pathway(pathway_raw_record):
                 pass
 
             elif current_entry_name not in NOT_CAPTURED_PATHWAY_FIELDS and \
-                            current_entry_name not in PARSE_PATHWAY_BY_FIELD:
+                    current_entry_name not in PARSE_PATHWAY_BY_FIELD:
                 raise ValueError('What is {} in {}?'.format(current_entry_name, pathway_dict['ENTRY']))
 
         past_entry = current_entry_name
@@ -279,7 +293,7 @@ def parse_organism(gene_raw_record):
                 pass
 
             elif current_entry_name not in NOT_CAPTURED_ORGANISM_FIELDS and \
-                            current_entry_name not in PARSE_ORGANISM_BY_FIELD:
+                    current_entry_name not in PARSE_ORGANISM_BY_FIELD:
                 raise ValueError('What is {} in {}?'.format(current_entry_name, gene_dict['ENTRY']))
 
         past_entry = current_entry_name
@@ -307,7 +321,7 @@ def parse_module(module_raw_record):
                 pass
 
             elif current_entry_name not in NOT_CAPTURED_MODULE_FIELDS and \
-                            current_entry_name not in PARSE_MODULE_BY_FIELD:
+                    current_entry_name not in PARSE_MODULE_BY_FIELD:
                 raise ValueError('What is {} in {}?'.format(current_entry_name, module_dict['ENTRY']))
 
         past_entry = current_entry_name
