@@ -11,6 +11,6 @@ install:
 - pip install --no-cache-dir --editable .
 script:
 - export MPLBACKEND="agg"
-- py.test --cov AMON --cov-report term-missing
+- py.test --cov KEGG_parser --cov-report term-missing
 after_success:
 - coveralls
