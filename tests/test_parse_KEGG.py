@@ -204,7 +204,7 @@ def module_raw_record():
 
 def test_parse_module(module_raw_record):
     module_record = parse_module(module_raw_record)
-    assert len(module_record) == 9
+    assert len(module_record) == 10
     assert module_record['ENTRY'] == 'M00000'
     assert module_record['NAME'] == "a fake pathway"
     assert module_record['DEFINITION'] == "(K00000+K00001,K09999+K99999) (K00002+K00003,K00005+K10006)"

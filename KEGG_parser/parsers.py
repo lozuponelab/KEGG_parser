@@ -118,6 +118,39 @@ def add_nested_dict(current_dict, current_entry_name, current_entry_data):
     return current_dict
 
 
+def add_module_orthology(current_dict, current_entry_name, current_entry_data):
+    split_current_entry_data = current_entry_data.split(' ')
+    if current_entry_name not in current_dict:
+        current_dict[current_entry_name] = dict()
+    orthology_name = [i for i in split_current_entry_data[1:] if i != '']
+    current_dict[current_entry_name][split_current_entry_data[0]] = ' '.join(orthology_name)
+
+    return current_dict
+
+
+def split_module_reaction(current_dict, current_entry_name, current_entry_data):
+    if current_entry_name not in current_dict:
+        current_dict[current_entry_name] = dict()
+
+    reaction_line = current_entry_data.split()
+    keys = reaction_line[0].split(',')
+    reaction_string = ' '.join(reaction_line[1:])
+    try:
+        reacts, prods = reaction_string.split(' -> ')
+    except ValueError:
+        reacts, prods = reaction_string.split(' <-> ')
+    prods = prods.split(' + ')
+    if len(prods) == 1:
+        prods = prods[0].split('+')
+    reacts = reacts.split(' + ')
+    if len(reacts) == 1:
+        reacts = reacts[0].split('+')
+    for key in keys:
+        current_dict[current_entry_name][key] = (tuple(reacts), tuple(prods))
+
+    return current_dict
+
+
 PARSE_KO_BY_FIELD = {
     'ENTRY': split_entry, 'NAME': split_name_by_comma, 'DEFINITION': return_self,
     'PATHWAY': split_and_append, 'MODULE': split_and_append, 'DISEASE': split_and_append,
@@ -156,9 +189,9 @@ PARSE_ORGANISM_BY_FIELD = {
 
 # TODO: parse module better
 PARSE_MODULE_BY_FIELD = {
-    'ENTRY': split_entry, 'NAME': return_self, 'DEFINITION': return_self, 'CLASS': return_module_class,
-    'PATHWAY': return_pathway_class, 'REACTION': append_to_list, 'COMPOUND': split_and_append, 'COMMENT': return_self,
-    'DBLINKS': add_nested_dict
+    'ENTRY': split_entry, 'NAME': return_self, 'DEFINITION': return_self, 'ORTHOLOGY': add_module_orthology,
+    'CLASS': return_module_class, 'PATHWAY': split_and_append, 'REACTION': split_module_reaction,
+    'COMPOUND': add_module_orthology, 'COMMENT': return_self, 'DBLINKS': add_nested_dict
 }
 
 NOT_CAPTURED_KO_FIELDS = ('REFERENCE', 'AUTHORS', 'TITLE', 'JOURNAL', 'SEQUENCE', 'BRITE')
@@ -173,7 +206,7 @@ NOT_CAPTURED_PATHWAY_FIELDS = ('GENE', 'ORGANISM', 'REFERENCE', 'AUTHORS', 'TITL
 
 NOT_CAPTURED_ORGANISM_FIELDS = ('AASEQ', 'NTSEQ')
 
-NOT_CAPTURED_MODULE_FIELDS = ('ORTHOLOGY', 'REFERENCE', 'AUTHORS', 'TITLE', 'JOURNAL')
+NOT_CAPTURED_MODULE_FIELDS = ('RMODULE', 'BRITE', 'REFERENCE', 'AUTHORS', 'TITLE', 'JOURNAL')
 
 
 def parse_ko(ko_raw_record):
@@ -311,6 +344,8 @@ def parse_module(module_raw_record):
             current_entry_name = past_entry
 
         current_entry_data = line[12:].strip()
+        if current_entry_data == '':
+            continue
 
         if current_entry_name is not '':
             if current_entry_name in PARSE_MODULE_BY_FIELD:
