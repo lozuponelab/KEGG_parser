@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 from KEGG_parser import __version__ as version
 
-__author__ = 'kthurimella'
+__author__ = 'lozuponelab'
 __version__ = version
 
 setup(
@@ -13,7 +13,7 @@ setup(
       packages=find_packages(),
       description="KEGG Parser: A tool for parsing and converting KEGG data into manipulable Python objects.",
       author="Kumar Thurimella",
-      author_email='kthurimella@gmail.com',
+      author_email='lozuponelab.dev@olucdenver.onmicrosoft.com',
       url="https://github.com/lozuponelab/KEGG_parser/",
       download_url="https://github.com/lozuponelab/KEGG_parser/tarball/%s" % __version__
 )
