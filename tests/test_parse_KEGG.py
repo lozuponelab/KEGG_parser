@@ -4,7 +4,7 @@ import pytest
 
 from KEGG_parser.downloader import get_from_kegg_api
 from KEGG_parser.parsers import parse_ko, parse_rn, parse_co, parse_pathway, parse_organism, parse_module
-from tests.test_fixtures import ko_raw_record, list_of_kos
+from test_fixtures import ko_raw_record, list_of_kos
 
 
 @pytest.fixture()

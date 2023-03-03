@@ -3,7 +3,7 @@ import pytest
 from KEGG_parser.downloader import get_from_kegg_flat_file, get_kegg_record_dict, \
     get_kegg_link_from_api
 from KEGG_parser.parsers import parse_ko
-from tests.test_fixtures import ko_raw_record, list_of_kos
+from test_fixtures import ko_raw_record, list_of_kos
 
 
 @pytest.fixture()
