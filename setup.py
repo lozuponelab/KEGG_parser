@@ -17,7 +17,7 @@ setup(
       packages=find_packages(),
       description="KEGG Parser: A tool for parsing and converting KEGG data into manipulable Python objects.",
       long_description=long_description,
-      long_description_content_type='text/markdown'
+      long_description_content_type='text/markdown',
       author="Kumar Thurimella",
       author_email='lozuponelab.dev@olucdenver.onmicrosoft.com',
       url="https://github.com/lozuponelab/KEGG_parser/",
