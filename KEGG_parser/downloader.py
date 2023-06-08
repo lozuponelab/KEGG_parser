@@ -1,6 +1,8 @@
 import asyncio
 
 import aiohttp
+import requests
+import time
 
 from KEGG_parser.parsers import parse_ko
 
@@ -45,10 +47,41 @@ async def kegg_download_manager(loop, list_of_ids):
 
     return [raw_record for raw_records in results for raw_record in raw_records.split('///')[:-1]]
 
+def download_synchronous(url, attempts=10):
+    for _ in range(attempts):
+        response = requests.get(url)
+
+        if response.status_code == 200:
+            return response.text
+    
+    # if none of our attempts have returned OK
+    raise ValueError('KEGG has forbidden request after %s attempts for url %s , which returns a response status of %s' % 
+                     (attempts, url, response.status_code))
+
+def kegg_download_manager_synchronous(list_of_ids, wait=3):
+    """This is a backup in case the async downloading is forbidden."""
+    urls = ['http://rest.kegg.jp/get/%s' % '+'.join(chunk) for chunk in chunks(list(list_of_ids), 10)]
+    num_urls = len(urls)
+
+    results = []
+    for i, url in enumerate(urls):
+        if i % 10 == 0:
+            print(f"Downloaded {(i/num_urls)*100}% of requested KOs.")
+        results.append(download_synchronous(url))
+        time.sleep(wait)
+
+    return [raw_record for raw_records in results for raw_record in raw_records.split('///')[:-1]]
+
+
 
 def get_from_kegg_api(loop, list_of_ids, parser):
-    return [parser(raw_record) for raw_record in loop.run_until_complete(kegg_download_manager(loop, list_of_ids))]
-
+    try:
+        return [parser(raw_record) for raw_record in loop.run_until_complete(kegg_download_manager(loop, list_of_ids))]
+    except ValueError:
+        print("Asynchronous downloading of KEGG records has failed. KEGG parser will try to download data sequentially."
+              "This will be slower.")
+        time.sleep(30)
+        return [parser(raw_record) for raw_record in loop.run_until_complete(kegg_download_manager_synchronous(list_of_ids))]
 
 def get_kegg_record_dict(list_of_ids, parser, records_file_loc=None, verbose=False):
     if records_file_loc is None:
