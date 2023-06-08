@@ -3,6 +3,7 @@ import asyncio
 import aiohttp
 import requests
 import time
+from tqdm import tqdm
 
 from KEGG_parser.parsers import parse_ko
 
@@ -58,15 +59,13 @@ def download_synchronous(url, attempts=10):
     raise ValueError('KEGG has forbidden request after %s attempts for url %s , which returns a response status of %s' % 
                      (attempts, url, response.status_code))
 
-def kegg_download_manager_synchronous(list_of_ids, wait=3):
+def kegg_download_manager_synchronous(list_of_ids, wait=1):
     """This is a backup in case the async downloading is forbidden."""
     urls = ['http://rest.kegg.jp/get/%s' % '+'.join(chunk) for chunk in chunks(list(list_of_ids), 10)]
     num_urls = len(urls)
-
+    print(f"Total urls to download: {num_urls}. Progress will be shown below.")
     results = []
-    for i, url in enumerate(urls):
-        if i % 10 == 0:
-            print(f"Downloaded {(i/num_urls)*100}% of requested KOs.")
+    for url in tqdm(urls):
         results.append(download_synchronous(url))
         time.sleep(wait)
 
