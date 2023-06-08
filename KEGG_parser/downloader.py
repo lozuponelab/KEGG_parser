@@ -32,7 +32,7 @@ async def download_coroutine(session, url, attempts=10, wait=30):
                 raise ValueError('Bad HTTP request status %s: %s\n%s' % (response.status, response.reason, url))
         await asyncio.sleep(wait)
 
-    raise ValueError('KEGG has forbidden request after %s attempts' % attempts)
+    raise ValueError('KEGG has forbidden request after %s attempts for url %s' % (attempts, url))
 
 
 async def kegg_download_manager(loop, list_of_ids):
