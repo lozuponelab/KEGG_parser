@@ -13,7 +13,7 @@ setup(
       version=__version__,
       setup_requires=['pytest-runner'],
       tests_require=['pytest'],
-      install_requires=['aiohttp', 'tqdm'],
+      install_requires=['aiohttp', 'tqdm', 'requests'],
       packages=find_packages(),
       description="KEGG Parser: A tool for parsing and converting KEGG data into manipulable Python objects.",
       long_description=long_description,
