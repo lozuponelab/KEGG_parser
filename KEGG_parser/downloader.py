@@ -80,7 +80,7 @@ def get_from_kegg_api(loop, list_of_ids, parser):
         print("Asynchronous downloading of KEGG records has failed. KEGG parser will try to download data sequentially."
               "This will be slower.")
         time.sleep(30)
-        return [parser(raw_record) for raw_record in loop.run_until_complete(kegg_download_manager_synchronous(list_of_ids))]
+        return [parser(raw_record) for raw_record in kegg_download_manager_synchronous(list_of_ids)]
 
 def get_kegg_record_dict(list_of_ids, parser, records_file_loc=None, verbose=False):
     if records_file_loc is None:
