@@ -1,0 +1,6 @@
+pytest 
+aiohttp 
+asyncio
+requests
+tqdm
+time
