@@ -72,8 +72,11 @@ def kegg_download_manager_synchronous(list_of_ids, wait=1):
     return [raw_record for raw_records in results for raw_record in raw_records.split('///')[:-1]]
 
 
+def get_from_kegg_api(loop, list_of_ids, parser, try_async=True):
+    if try_async == False:
+        print("KEGG parser will try to download data sequentially.")
+        return [parser(raw_record) for raw_record in kegg_download_manager_synchronous(list_of_ids)]
 
-def get_from_kegg_api(loop, list_of_ids, parser):
     try:
         return [parser(raw_record) for raw_record in loop.run_until_complete(kegg_download_manager(loop, list_of_ids))]
     except ValueError:
@@ -82,10 +85,11 @@ def get_from_kegg_api(loop, list_of_ids, parser):
         time.sleep(30)
         return [parser(raw_record) for raw_record in kegg_download_manager_synchronous(list_of_ids)]
 
-def get_kegg_record_dict(list_of_ids, parser, records_file_loc=None, verbose=False):
+
+def get_kegg_record_dict(list_of_ids, parser, records_file_loc=None, verbose=False, try_async=True):
     if records_file_loc is None:
         loop = asyncio.get_event_loop()
-        records = get_from_kegg_api(loop, list_of_ids, parser)
+        records = get_from_kegg_api(loop, list_of_ids, parser, try_async=try_async)
     else:
         records = get_from_kegg_flat_file(records_file_loc, list_of_ids, parser)
     if verbose:
