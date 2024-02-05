@@ -29,9 +29,12 @@ def test_get_from_kegg_rxns(loop, list_of_rxns):
 
 def test_parse_ko(ko_raw_record):
     ko_record = parse_ko(ko_raw_record)
-    assert len(ko_record) == 8
-    assert tuple(ko_record['DBLINKS']['RN']) == tuple(['R00000'])
+    assert len(ko_record) == 9
+    assert tuple(ko_record['REACTION']) == tuple([('R00623', 'primary_alcohol:NAD+ oxidoreductase'),
+                                                   ('R00754', 'ethanol:NAD+ oxidoreductase')
+                                                   ])
     assert tuple(ko_record['DBLINKS']['COG']) == tuple(['COG0000'])
+    assert tuple(ko_record['DBLINKS']['GO']) == tuple(["0004022", "0004023", "0004024", "0004025"])
 
 
 @pytest.fixture()
