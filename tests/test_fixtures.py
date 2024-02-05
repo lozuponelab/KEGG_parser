@@ -8,8 +8,10 @@ def ko_raw_record():
            "PATHWAY     ko00000 a fake pathway\n" \
            "DISEASE     H00000 A bad one\n" \
            "CLASS       Metabolism; Carbohydrate Metabolism; Glycolysis / Gluconeogenesis[PATH:ko00010]\n" \
-           "DBLINKS     RN: R00000\n" \
-           "            COG: COG0000\n" \
+           "REACTION    R00623  primary_alcohol:NAD+ oxidoreductase\n" \
+           "            R00754  ethanol:NAD+ oxidoreductase\n" \
+           "DBLINKS     COG: COG0000\n" \
+           "            GO: 0004022 0004023 0004024 0004025\n" \
            "GENES       HSA: hsa00000\n" \
            "REFERENCE\n" \
            "  AUTHORS   Fake G.\n" \
