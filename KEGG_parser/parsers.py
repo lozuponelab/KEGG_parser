@@ -154,7 +154,8 @@ def split_module_reaction(current_dict, current_entry_name, current_entry_data):
 PARSE_KO_BY_FIELD = {
     'ENTRY': split_entry, 'NAME': split_name_by_comma, 'DEFINITION': return_self,
     'PATHWAY': split_and_append, 'MODULE': split_and_append, 'DISEASE': split_and_append,
-    'CLASS': add_class, 'DBLINKS': add_nested_dict, 'GENES': add_nested_dict
+    'CLASS': add_class, 'DBLINKS': add_nested_dict, 'GENES': add_nested_dict,
+    'REACTION': split_and_append
 }
 
 PARSE_RN_BY_FIELD = {
@@ -194,7 +195,7 @@ PARSE_MODULE_BY_FIELD = {
     'COMPOUND': add_module_orthology, 'COMMENT': return_self, 'DBLINKS': add_nested_dict
 }
 
-NOT_CAPTURED_KO_FIELDS = ('REFERENCE', 'AUTHORS', 'TITLE', 'JOURNAL', 'SEQUENCE', 'BRITE', 'SYMBOL', 'REACTION',
+NOT_CAPTURED_KO_FIELDS = ('REFERENCE', 'AUTHORS', 'TITLE', 'JOURNAL', 'SEQUENCE', 'BRITE', 'SYMBOL',
                           'NETWORK', 'ELEMENT')
 
 NOT_CAPTURED_RN_FIELDS = ('REFERENCE', 'AUTHORS', 'TITLE', 'JOURNAL', 'BRITE')
