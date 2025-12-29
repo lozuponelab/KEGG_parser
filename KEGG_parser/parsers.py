@@ -1,14 +1,27 @@
 """Parsers"""
 
-
+##### Methods #####
+# These functions define how a section of the flat file will be processed
 def split_entry(current_dict, current_entry_name, current_entry_data):
     current_dict[current_entry_name] = current_entry_data.split()[0]
+
+    return current_dict
+
+def enzyme_entry(current_dict, current_entry_name, current_entry_data):
+    entry_data_split = current_entry_data.split()
+    current_dict[current_entry_name] = entry_data_split[0] + ":" + entry_data_split[1]
 
     return current_dict
 
 
 def split_name_by_comma(current_dict, current_entry_name, current_entry_data):
     current_dict[current_entry_name] = current_entry_data.split(', ')
+
+    return current_dict
+
+
+def split_name_by_semicolon(current_dict, current_entry_name, current_entry_data):
+    current_dict[current_entry_name] = current_entry_data.split('; ')
 
     return current_dict
 
@@ -93,7 +106,7 @@ def split_and_append_organism(current_dict, current_entry_name, current_entry_da
 
 def append_to_list(current_dict, current_entry_name, current_entry_data):
     if current_entry_name not in current_dict:
-        current_dict[current_entry_name] = list()
+        current_dict[current_entry_name] = []
 
     current_dict[current_entry_name].append(current_entry_data)
 
@@ -112,7 +125,7 @@ def add_class(current_dict, current_entry_name, current_entry_data):
 def add_nested_dict(current_dict, current_entry_name, current_entry_data):
     split_current_entry_data = current_entry_data.split(': ')
     if current_entry_name not in current_dict:
-        current_dict[current_entry_name] = dict()
+        current_dict[current_entry_name] = {}
     current_dict[current_entry_name][split_current_entry_data[0]] = split_current_entry_data[1].split()
 
     return current_dict
@@ -121,7 +134,7 @@ def add_nested_dict(current_dict, current_entry_name, current_entry_data):
 def add_module_orthology(current_dict, current_entry_name, current_entry_data):
     split_current_entry_data = current_entry_data.split(' ')
     if current_entry_name not in current_dict:
-        current_dict[current_entry_name] = dict()
+        current_dict[current_entry_name] = {}
     orthology_name = [i for i in split_current_entry_data[1:] if i != '']
     current_dict[current_entry_name][split_current_entry_data[0]] = ' '.join(orthology_name)
 
@@ -130,7 +143,7 @@ def add_module_orthology(current_dict, current_entry_name, current_entry_data):
 
 def split_module_reaction(current_dict, current_entry_name, current_entry_data):
     if current_entry_name not in current_dict:
-        current_dict[current_entry_name] = dict()
+        current_dict[current_entry_name] = {}
 
     reaction_line = current_entry_data.split()
     keys = reaction_line[0].split(',')
@@ -150,6 +163,21 @@ def split_module_reaction(current_dict, current_entry_name, current_entry_data):
 
     return current_dict
 
+def split_multiline_semicolon_list(current_dict, current_entry_name, current_entry_data):
+    # remove trailing semicolon and surrounding whitespace
+    value = current_entry_data.strip().rstrip(';')
+
+    if current_entry_name not in current_dict:
+        current_dict[current_entry_name] = []
+
+    if value:
+        current_dict[current_entry_name].append(value)
+
+    return current_dict
+
+
+###### FILE STRUCTURES #####
+# These dictionaries define how the output of the flat files will look 
 
 PARSE_KO_BY_FIELD = {
     'ENTRY': split_entry, 'NAME': split_name_by_comma, 'DEFINITION': return_self,
@@ -188,12 +216,19 @@ PARSE_ORGANISM_BY_FIELD = {
     'DISEASE': split_and_append
 }
 
-# TODO: parse module better
 PARSE_MODULE_BY_FIELD = {
-    'ENTRY': split_entry, 'NAME': return_self, 'DEFINITION': return_self, 'ORTHOLOGY': add_module_orthology,
+    'ENTRY': split_entry, 'NAME': return_self, 'DEFINITION': return_self, 'ORTHOLOGY': split_and_append,
     'CLASS': return_module_class, 'PATHWAY': split_and_append, 'REACTION': split_module_reaction,
     'COMPOUND': add_module_orthology, 'COMMENT': return_self, 'DBLINKS': add_nested_dict
 }
+
+PARSE_ENZYME_BY_FIELD = { 
+    'ENTRY': enzyme_entry, 'NAME': split_multiline_semicolon_list, 'CLASS': split_multiline_semicolon_list, 
+    'ALL_REAC': split_multiline_semicolon_list
+}
+
+###### EXCLUSIONS #####
+# These are sections of the flat file entries that won't be included in the final output 
 
 NOT_CAPTURED_KO_FIELDS = ('REFERENCE', 'AUTHORS', 'TITLE', 'JOURNAL', 'SEQUENCE', 'BRITE', 'SYMBOL',
                           'NETWORK', 'ELEMENT')
@@ -206,25 +241,36 @@ NOT_CAPTURED_CO_FIELDS = ('BRITE', 'ATOM', 'BOND', 'BRACKET', 'ORIGINAL', 'REPEA
                           'NETWORK')
 
 NOT_CAPTURED_PATHWAY_FIELDS = ('GENE', 'ORGANISM', 'REFERENCE', 'AUTHORS', 'TITLE', 'JOURNAL', 'INCLUDING', 
-                               'REL', 'PATHWAY', 'NETWORK', 'KO')
+                               'REL', 'PATHWAY', 'NETWORK', 'KO', 'ELEMENT')
 
 NOT_CAPTURED_ORGANISM_FIELDS = ('AASEQ', 'NTSEQ')
 
 NOT_CAPTURED_MODULE_FIELDS = ('RMODULE', 'BRITE', 'REFERENCE', 'AUTHORS', 'TITLE', 'JOURNAL')
 
+NOT_CAPTURED_ENZYME_FIELDS = ('SYSNAME',  'DBLINKS', 'ORTHOLOGY',
+    'REACTION', 'SUBSTRATE', 'PRODUCT', 'COMMENT', 'HISTORY', 'REFERENCE', 'AUTHORS', 'TITLE', 
+                              'JOURNAL', 'PATHWAY', 'ALL', 'GENES', 'SEQUENCE')
 
+
+##### PARSERS #####
+# Functions for final parsing of the flat files 
+# raw records are kegg flat files as text not the file path 
 def parse_ko(ko_raw_record):
-    ko_dict = dict()
+    ko_dict = {}
     past_entry = None
     for line in ko_raw_record.strip().split('\n'):
         current_entry_name = line[:12].strip()
 
-        if current_entry_name is '':
+        if current_entry_name == '///':
+            past_entry = None
+            continue
+
+        if current_entry_name == '':
             current_entry_name = past_entry
 
         current_entry_data = line[12:].strip()
 
-        if current_entry_name is not '':
+        if current_entry_name != '':
             if current_entry_name in PARSE_KO_BY_FIELD:
                 ko_dict = PARSE_KO_BY_FIELD[current_entry_name](ko_dict, current_entry_name, current_entry_data)
 
@@ -237,17 +283,21 @@ def parse_ko(ko_raw_record):
 
 
 def parse_rn(rn_raw_record):
-    rn_dict = dict()
+    rn_dict = {}
     past_entry = None
     for line in rn_raw_record.strip().split('\n'):
         current_entry_name = line[:12].strip()
+
+        if current_entry_name == '///':
+            past_entry = None
+            continue
 
         if current_entry_name == '':
             current_entry_name = past_entry
 
         current_entry_data = line[12:].strip()
 
-        if current_entry_name is not '':
+        if current_entry_name != '':
             if current_entry_name in PARSE_RN_BY_FIELD:
                 rn_dict = PARSE_RN_BY_FIELD[current_entry_name](rn_dict, current_entry_name, current_entry_data)
 
@@ -259,17 +309,21 @@ def parse_rn(rn_raw_record):
 
 
 def parse_co(co_raw_record):
-    co_dict = dict()
+    co_dict = {}
     past_entry = None
     for line in co_raw_record.strip().split('\n'):
         current_entry_name = line[:12].strip()
+
+        if current_entry_name == '///':
+            past_entry = None
+            continue
 
         if current_entry_name == '':
             current_entry_name = past_entry
 
         current_entry_data = line[12:].strip()
 
-        if current_entry_name is not '':
+        if current_entry_name != '':
             if current_entry_name in PARSE_CO_BY_FIELD:
                 co_dict = PARSE_CO_BY_FIELD[current_entry_name](co_dict, current_entry_name, current_entry_data)
 
@@ -282,18 +336,22 @@ def parse_co(co_raw_record):
 
 
 def parse_pathway(pathway_raw_record):
-    pathway_dict = dict()
+    pathway_dict = {}
     past_entry = None
 
     for line in pathway_raw_record.strip().split('\n'):
         current_entry_name = line[:12].strip()
+
+        if current_entry_name == '///':
+            past_entry = None
+            continue
 
         if current_entry_name == '':
             current_entry_name = past_entry
 
         current_entry_data = line[12:].strip()
 
-        if current_entry_name is not '':
+        if current_entry_name != '':
             if current_entry_name in PARSE_PATHWAY_BY_FIELD:
                 pathway_dict = PARSE_PATHWAY_BY_FIELD[current_entry_name](
                     pathway_dict, current_entry_name, current_entry_data)
@@ -310,18 +368,22 @@ def parse_pathway(pathway_raw_record):
 
 
 def parse_organism(gene_raw_record):
-    gene_dict = dict()
+    gene_dict = {}
     past_entry = None
 
     for line in gene_raw_record.strip().split('\n'):
         current_entry_name = line[:12].strip()
+
+        if current_entry_name == '///':
+            past_entry = None
+            continue
 
         if current_entry_name == '':
             current_entry_name = past_entry
 
         current_entry_data = line[12:].strip()
 
-        if current_entry_name is not '':
+        if current_entry_name != '':
             if current_entry_name in PARSE_ORGANISM_BY_FIELD:
                 gene_dict = PARSE_ORGANISM_BY_FIELD[current_entry_name](
                     gene_dict, current_entry_name, current_entry_data)
@@ -338,11 +400,15 @@ def parse_organism(gene_raw_record):
 
 
 def parse_module(module_raw_record):
-    module_dict = dict()
+    module_dict = {}
     past_entry = None
 
     for line in module_raw_record.strip().split('\n'):
         current_entry_name = line[:12].strip()
+
+        if current_entry_name == '///':
+            past_entry = None
+            continue
 
         if current_entry_name == '':
             current_entry_name = past_entry
@@ -351,7 +417,7 @@ def parse_module(module_raw_record):
         if current_entry_data == '':
             continue
 
-        if current_entry_name is not '':
+        if current_entry_name != '':
             if current_entry_name in PARSE_MODULE_BY_FIELD:
                 module_dict = PARSE_MODULE_BY_FIELD[current_entry_name](
                     module_dict, current_entry_name, current_entry_data)
@@ -365,3 +431,34 @@ def parse_module(module_raw_record):
 
         past_entry = current_entry_name
     return module_dict
+
+
+def parse_enzyme(enzyme_raw_record): 
+    enzyme_dict = {}
+    past_entry = None
+
+    for line in enzyme_raw_record.strip().split('\n'):
+        current_entry_name = line[:12].strip()
+
+        if current_entry_name == '///':
+            past_entry = None
+            continue
+
+        if current_entry_name == '':
+            current_entry_name = past_entry
+
+        current_entry_data = line[12:].strip()
+
+        if current_entry_name != '':
+            if current_entry_name in PARSE_ENZYME_BY_FIELD:
+                enzyme_dict = PARSE_ENZYME_BY_FIELD[current_entry_name](enzyme_dict, current_entry_name, current_entry_data)
+
+            elif current_entry_name not in NOT_CAPTURED_ENZYME_FIELDS and current_entry_name not in PARSE_ENZYME_BY_FIELD:
+                raise ValueError('What is {} in {}?'.format(current_entry_name, enzyme_dict['ENTRY']))
+
+        past_entry = current_entry_name
+
+    return enzyme_dict
+
+
+
