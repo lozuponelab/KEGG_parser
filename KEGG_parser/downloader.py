@@ -87,13 +87,44 @@ def get_from_kegg_api(loop, list_of_ids, parser, try_async=True):
 
 
 def get_kegg_record_dict(list_of_ids, parser, records_file_loc=None, verbose=False, try_async=True):
-    if records_file_loc is None:
-        loop = asyncio.get_event_loop()
-        records = get_from_kegg_api(loop, list_of_ids, parser, try_async=try_async)
-    else:
+    """
+    Fetch KEGG records as a dictionary.
+
+    Parameters
+    ----------
+    list_of_ids : iterable
+        List of KEGG IDs to fetch.
+    parser : function
+        Parser function to parse each raw KEGG record.
+    records_file_loc : str or None
+        Path to local KEGG flat file. If None, fetch from API.
+    verbose : bool
+        Print number of records fetched.
+    try_async : bool
+        Whether to attempt asynchronous downloading.
+
+    Returns
+    -------
+    dict
+        Dictionary of KEGG records keyed by ENTRY ID.
+    """
+    if records_file_loc is not None:
+        # Read from local flat file
         records = get_from_kegg_flat_file(records_file_loc, list_of_ids, parser)
+    else:
+        # Ensure an event loop exists
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            # No running loop, create a new one
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+
+        records = get_from_kegg_api(loop, list_of_ids, parser, try_async=try_async)
+
     if verbose:
-        print("%s records acquired" % len(records))
+        print(f"{len(records)} records acquired")
+
     return {record['ENTRY']: record for record in records}
 
 
